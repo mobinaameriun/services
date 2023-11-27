@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="pay.css">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet"
+          integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"
+            integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL"
+            crossorigin="anonymous"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+    <title>Pay</title>
+</head>
+<body style="height: 500px;width: 100%;horiz-align: center;">
+<div class="w-100 h-100" style="display: flex; justify-content: center; align-items: center">
+    <div class="rounded-5 w-25 bg-primary-subtle p-5">
+        <form>
+            <div id="demo" class="text-center mb-3"></div>
+            <div class="input-group mb-3">
+                <input type="text" class="form-control" id="card-number" placeholder="card number"
+                       aria-label="Card number"
+                       aria-describedby="basic-addon1">
+            </div>
+            <div class="input-group mb-3">
+                <input type="text" class="form-control" id="cvv2" placeholder="cvv2" aria-label="cvv2"
+                       aria-describedby="basic-addon1">
+            </div>
+            <div class="input-group mb-3">
+                <input type="password" class="form-control" id="password" placeholder="password" aria-label="password"
+                       aria-describedby="basic-addon1">
+            </div>
+            <div style="width: 100%; horiz-align: center;" class="text-center">
+                <button type="button" class="btn btn-danger" style=" align-self: center" id="submit-btn"
+                        onclick="closePage()">cancel
+                </button>
+                <button type="button" class="btn btn-success" style=" align-self: center" id="cancel-btn"
+                        onclick="submitBtn()">submit
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    const time_in_minutes = 10;
+    const current_time = Date.parse(new Date());
+    const deadline = new Date(current_time + time_in_minutes * 60 * 1000);
+
+
+    function time_remaining(endTime) {
+        const t = Date.parse(endTime) - Date.parse(new Date());
+        const seconds = Math.floor((t / 1000) % 60);
+        const minutes = Math.floor((t / 1000 / 60) % 60);
+        return {'total': t, 'minutes': minutes, 'seconds': seconds};
+    }
+
+    function run_clock(id, endTime) {
+        // run function once at first to avoid delay
+        let timeInterval = setInterval(update_clock, 1000);
+        const clock = document.getElementById(id);
+
+        function update_clock() {
+            const t = time_remaining(endTime);
+            clock.innerHTML = 'Remaining time: ' + t.minutes + ':' + t.seconds;
+            if (t.total <= 0) {
+                // show dialog and close
+                clearInterval(timeInterval);
+                customAlert.alert('vaght tamoome', 'Etmame time', forceClose);
+            }
+        }
+
+        update_clock();
+    }
+
+    run_clock('demo', deadline);
+</script>
+
+<script>
+    function submitBtn() {
+        let cardNumber = $("#card-number").val();
+        let cvv2 = $("#cvv2").val();
+        let password = $("#password").val();
+
+        if (fieldValidation(cardNumber, cvv2, password)) {
+            const jsonObject = {
+                cardNumber: cardNumber,
+                cvv2: cvv2,
+                password: password
+            };
+
+            sendData(jsonObject);
+        }
+    }
+
+    function fieldValidation(cardNumber, cvv2, password) {
+        if (cardNumber === "") {
+            alert("card number empty")
+            return false
+        }
+        if (cvv2 === "") {
+            alert("cvv2 empty")
+            return false
+        }
+        if (password === "") {
+            alert("password empty")
+            return false
+        }
+        return true;
+    }
+
+    const sendData = async (jsonObject) => {
+        const response = await fetch('http://localhost:8080/client/pay', {
+            method: 'POST',
+            body: JSON.stringify(jsonObject),
+            headers: {
+                'Content-type': 'application/json'
+            }
+        }).then(result => {
+            if (result.ok) {
+                customAlert.ok("suceess");
+            } else {
+                customAlert.ok("failed");
+            }
+        })
+    };
+
+    function closePage() {
+        customAlert.ok('Are ')
+    }
+
+    function forceClose() {
+        close();
+    }
+</script>
+
+<script>
+    function CustomAlert() {
+        this.alert = function (message, title, fun) {
+            document.body.innerHTML = document.body.innerHTML + '<div id="dialogoverlay"></div><div id="dialogbox" class="slit-in-vertical"><div><div id="dialogboxhead"></div><div id="dialogboxbody"></div><div id="dialogboxfoot"></div></div></div>';
+
+            let dialogoverlay = document.getElementById('dialogoverlay');
+            let dialogbox = document.getElementById('dialogbox');
+
+            let winH = window.innerHeight;
+            dialogoverlay.style.height = winH + "px";
+
+            dialogbox.style.top = "100px";
+
+            dialogoverlay.style.display = "block";
+            dialogbox.style.display = "block";
+
+            document.getElementById('dialogboxhead').style.display = 'block';
+
+            if (typeof title === 'undefined') {
+                document.getElementById('dialogboxhead').style.display = 'none';
+            } else {
+                document.getElementById('dialogboxhead').innerHTML = '<i class="fa fa-exclamation-circle" aria-hidden="true"></i> ' + title;
+            }
+            document.getElementById('dialogboxbody').innerHTML = message;
+            document.getElementById('dialogboxfoot').innerHTML = '<button class="pure-material-button-contained active" onclick="customAlert.ok()">OK</button>';
+            this.ok = function () {
+                document.getElementById('dialogbox').style.display = "none";
+                document.getElementById('dialogoverlay').style.display = "none";
+                fun();
+            }
+        }
+
+
+    }
+
+    let customAlert = new CustomAlert();
+</script>
+
+</body>
+</html>
